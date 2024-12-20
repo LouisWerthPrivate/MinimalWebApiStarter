@@ -1,5 +1,4 @@
 ﻿using APITemplate.EndpointFilters;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,15 +8,25 @@ namespace APITemplate.Endpoints
 {
     public static class EndpointMappings
     {
+        /// <summary>
+        /// Maps all the endpoints for the application.
+        /// </summary>
+        /// <param name="app">The WebApplication instance.</param>
+        /// <returns>The WebApplication instance with mapped endpoints.</returns>
         public static WebApplication MapEndpoints(this WebApplication app)
         {
+            /// <summary>
+            /// Test Endpoint.
+            /// </summary>
+            /// <param name="logger">The logger instance.</param>
+            /// <returns>Returns the environment name.</returns>
             app.MapGet("/test", (ILogger<Program> logger) =>
             {
-                logger.LogInformation("Health check endpoint called");
+                logger.LogInformation("Test endpoint called");
                 return Results.Ok(new { Environment = app.Environment.EnvironmentName });
             })
             .WithName("Test")
-            .WithDescription("Gets the health of the API")
+            .WithDescription("Confirmation of security implementation on endpoint")
             .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status500InternalServerError, "application/problem+json")
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable, "application/problem+json")
@@ -28,15 +37,22 @@ namespace APITemplate.Endpoints
             .AddEndpointFilter<AuditLoggingFilter>()
             .RequireAuthorization(policyNames: ["Bearer", "ApiKey"]);
 
+            /// <summary>
+            /// Login endpoint.
+            /// </summary>
+            /// <param name="logger">The logger instance.</param>
+            /// <param name="config">The configuration instance.</param>
+            /// <returns>Returns a JWT token.</returns>
             app.MapPost("/login", (ILogger<Program> logger, IConfiguration config) =>
             {
+                //Very basic implementation of JWT token generation, this should be changed to your orginisation preferences. 
                 var claims = new[]
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, "user_id"),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                        new Claim(JwtRegisteredClaimNames.Sub, "user_id"),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 };
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.GetValue<string>("ApiSecurityOptions:JwtBeareer:SymmetricSecurityKey", "bXlzdXBlcnNlY3JldGtleQ==bXlzdXBlcnNlY3JldGtleQ=="))); 
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.GetValue<string>("ApiSecurityOptions:JwtBeareer:SymmetricSecurityKey", "bXlzdXBlcnNlY3JldGtleQ==bXlzdXBlcnNlY3JldGtleQ==")));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 var token = new JwtSecurityToken(
